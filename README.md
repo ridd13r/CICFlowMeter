@@ -1,4 +1,3 @@
-
 ## Install jnetpcap local repo
 
 for linux, sudo is a prerequisite
@@ -14,7 +13,7 @@ open a Terminal in the IDE
 ```
 //linux:
 $ sudo bash
-$ gradle execute
+$ ./gradlew execute
 
 //windows:
 $ gradlew execute
@@ -36,7 +35,7 @@ Run eclipse with sudo
 open a Terminal in the IDE
 ```
 //linux:
-$ gradle distZip
+$ ./gradlew distZip
 //window
 $ gradlew distZip
 ```

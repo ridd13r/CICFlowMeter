@@ -31,8 +31,8 @@ public class BasicFlow {
 
 	private 	long Act_data_pkt_forward;
 	private 	long min_seg_size_forward;
-	private 	int Init_Win_bytes_forward=-1;
-	private 	int Init_Win_bytes_backward=-1;
+	private 	int Init_Win_bytes_forward=0;
+	private 	int Init_Win_bytes_backward=0;
 
 
 	private		byte[] src;
@@ -55,10 +55,11 @@ public class BasicFlow {
     private	    long   flowLastSeen;
     private     long   forwardLastSeen;
     private     long   backwardLastSeen;
-    
+    private     long   activityTimeout;
 
-	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet, byte[] flowSrc, byte[] flowDst, int flowSrcPort, int flowDstPort) {
+	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet, byte[] flowSrc, byte[] flowDst, int flowSrcPort, int flowDstPort, long activityTimeout) {
 		super();
+		this.activityTimeout = activityTimeout;
 		this.initParameters();
 		this.isBidirectional = isBidirectional;
 		this.firstPacket(packet);
@@ -68,15 +69,17 @@ public class BasicFlow {
 		this.dstPort = flowDstPort;
 	}    
     
-	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet) {
+	public BasicFlow(boolean isBidirectional,BasicPacketInfo packet, long activityTimeout) {
 		super();
+		this.activityTimeout = activityTimeout;
 		this.initParameters();
 		this.isBidirectional = isBidirectional;
 		this.firstPacket(packet);
 	}
 
-	public BasicFlow(BasicPacketInfo packet) {
+	public BasicFlow(BasicPacketInfo packet, long activityTimeout) {
 		super();
+		this.activityTimeout = activityTimeout;
 		this.initParameters();
 		this.isBidirectional = true;		
 		firstPacket(packet);
@@ -129,7 +132,7 @@ public class BasicFlow {
 			this.dst = packet.getDst();
 			this.dstPort = packet.getDstPort();
 		}		
-		if(this.src == packet.getSrc()){
+		if(Arrays.equals(this.src, packet.getSrc())){
 			this.min_seg_size_forward = packet.getHeaderBytes();
 			Init_Win_bytes_forward = packet.getTCPWindow();
 			this.flowLengthStats.addValue((double)packet.getPayloadBytes());
@@ -164,9 +167,9 @@ public class BasicFlow {
 	}
     
     public void addPacket(BasicPacketInfo packet){
-		//updateFlowBulk(packet);
-		//detectUpdateSubflows(packet);
-		//checkFlags(packet);
+		updateFlowBulk(packet);
+		detectUpdateSubflows(packet);
+		checkFlags(packet);
     	long currentTimestamp = packet.getTimeStamp();
     	if(isBidirectional){
 			this.flowLengthStats.addValue((double)packet.getPayloadBytes());
@@ -346,7 +349,7 @@ public class BasicFlow {
 		if( (packet.getTimeStamp() - (sfLastPacketTS)/(double)1000000)   > 1.0 ){
 			sfCount ++ ;
 			long lastSFduration = packet.getTimeStamp() - sfAcHelper;
-			updateActiveIdleTime(packet.getTimeStamp() - sfLastPacketTS, 5000000L);
+			updateActiveIdleTime(packet.getTimeStamp(), this.activityTimeout);
 			sfAcHelper = packet.getTimeStamp();
 		}
 
@@ -1060,7 +1063,7 @@ public class BasicFlow {
 		else{
 			return "BENIGN";
 		}*/
-        return "No Label";
+        return "NeedManualLabel";
     }
 	
     public String dumpFlowBasedFeaturesEx() {
@@ -1191,7 +1194,7 @@ public class BasicFlow {
 		dump.append(fAvgBytesPerBulk()).append(separator);							//63	
 		dump.append(fAvgPacketsPerBulk()).append(separator);						//64
 		dump.append(fAvgBulkRate()).append(separator);								//65
-		dump.append(fAvgBytesPerBulk()).append(separator);							//66
+		dump.append(bAvgBytesPerBulk()).append(separator);							//66
 		dump.append(bAvgPacketsPerBulk()).append(separator);						//67
 		dump.append(bAvgBulkRate()).append(separator);								//68
     	
